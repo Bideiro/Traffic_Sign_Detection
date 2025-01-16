@@ -1,0 +1,89 @@
+List of Road Signs:
+
+Priority Signs
+
+	Stop Sign
+	Give Way Sign
+	Left Turner Must Give Way 
+	
+Direction Signs
+
+	Pass either side
+	No turns
+	One way
+	Keep right
+	Keep left
+	All traffic must turn right
+	All traffic must turn left
+	Merging traffic
+	Two-way traffic
+	Ssalubong na trapiko
+	Right lane must turn right 
+	Left lane must turn left
+
+Prohibitive/restrictive Signs
+
+	No entry for all vehicles
+	No entry for cars
+	No entry for jeepneys
+	No entry for buses
+	No entry gfor trucks
+	No entry for bicycles
+	No entry for tricycles
+	No entry for vehicles with trailer
+	No entry for push carts
+	No pedestrian crossing
+	User Overpass
+	Use Ped Xing
+	No right turn
+	No left turn
+	No U-Turn
+	No Overtaking Zone
+
+Speed Signs 
+	
+	-- Maximum speed--
+
+	--End of maximum speed restiction--
+
+	Speed limit derestriction
+	
+	--Minimum speed restriction-
+
+Parking and stopping signs
+
+	Loading zone
+	2P Time restricked parking
+	Loading and unloading zone
+	No waiting anytime 
+	Bawal mag hintay ano amng oras
+	No loading and unloading anytime 
+	Bawal magsakay at mag baba
+	Do not block intersection
+	No parking 
+	Right turner cross at broken lines
+	No stopping anytime
+	
+Miscellaneous Signs
+
+	-- No entry for vehicles more than __ meters of width --
+
+	-- No entry for vehicles with __ meters in height --
+
+	-- No entry for vehicles more than __ meters in length --
+
+	-- No entry for vehicles with gross vehicle mass of more than __ tons --
+
+	-- No entry for vehicles with gross axle load of more __ tons--
+
+	Use seat belt
+
+	No blowing of horns
+
+	Be aware of pedestirna crossing 
+	
+	Be aware of school children corssing
+
+	bike lane ahead
+
+	be aware of persons with Disabilities crossing 
