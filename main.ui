@@ -36,9 +36,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="On_cam">
+       <widget class="QPushButton" name="Inference_Button">
         <property name="text">
-         <string>On Cam</string>
+         <string>Enable YOLO_ResNet50V2 Inference</string>
         </property>
        </widget>
       </item>
@@ -62,15 +62,6 @@
     <addaction name="separator"/>
     <addaction name="actionRefresh"/>
    </widget>
-   <widget class="QMenu" name="menuPreferences">
-    <property name="title">
-     <string>Preferences</string>
-    </property>
-    <addaction name="actionVideo_Inference"/>
-    <addaction name="separator"/>
-    <addaction name="actionSet_YOLO_Model"/>
-    <addaction name="actionSet_ResNet50V2_Model"/>
-   </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
      <string>View</string>
@@ -81,8 +72,15 @@
      <string>Help</string>
     </property>
    </widget>
-   <addaction name="menuPreferences"/>
+   <widget class="QMenu" name="menuModels">
+    <property name="title">
+     <string>Models</string>
+    </property>
+    <addaction name="actionLoad_YOLO"/>
+    <addaction name="actionLoad_ResNet"/>
+   </widget>
    <addaction name="menuCamera"/>
+   <addaction name="menuModels"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -114,6 +112,16 @@
   <action name="actionSet_ResNet50V2_Model">
    <property name="text">
     <string>Set ResNet50V2 Model</string>
+   </property>
+  </action>
+  <action name="actionLoad_YOLO">
+   <property name="text">
+    <string>Load a YOLO Model</string>
+   </property>
+  </action>
+  <action name="actionLoad_ResNet">
+   <property name="text">
+    <string>Load a ResNet50v2 Model</string>
    </property>
   </action>
  </widget>

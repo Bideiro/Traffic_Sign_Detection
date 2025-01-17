@@ -2,7 +2,7 @@ import sys
 import cv2
 import numpy as np
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QFileDialog
+    QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QFileDialog, QMessageBox
 )
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer
@@ -10,13 +10,18 @@ from ultralytics import YOLO
 from tensorflow.keras.applications import ResNet50V2
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.models import Model
+from tensorflow.keras.models import load_model
 
 class InferenceProcessor:
     """Class to handle YOLO inference, crop bounding boxes, and process them with ResNet50V2."""
     def __init__(self, model):
         self.model = model
         self.resnet = ResNet50V2(weights="imagenet")  # Load pre-trained ResNet50V2
+        self.custom_resnet = None  # Custom ResNet model
+
+    def load_custom_resnet(self, model_path):
+        """Load a custom ResNet model from file."""
+        self.custom_resnet = load_model(model_path)
 
     def process_frame(self, frame):
         """Run YOLO inference, crop bounding boxes, and process them with ResNet50V2."""
@@ -37,16 +42,20 @@ class InferenceProcessor:
                 # Crop the region of interest (ROI)
                 cropped = frame[y1:y2, x1:x2]
 
-                # Process the cropped ROI with ResNet50V2
+                # Process the cropped ROI
                 if cropped.size > 0:  # Ensure the crop is valid
                     resized = cv2.resize(cropped, (224, 224))  # Resize to ResNet50V2 input size
                     array = img_to_array(resized)  # Convert to array
                     array = np.expand_dims(array, axis=0)  # Add batch dimension
                     array = preprocess_input(array)  # Preprocess for ResNet50V2
 
-                    # Predict using ResNet50V2
-                    predictions = self.resnet.predict(array)
-                    print(predictions)  # Output predictions to the terminal
+                    # Predict using ResNet50V2 or custom ResNet
+                    if self.custom_resnet:
+                        predictions = self.custom_resnet.predict(array)
+                        print("Custom ResNet Predictions:", predictions)
+                    else:
+                        predictions = self.resnet.predict(array)
+                        print("Pre-trained ResNet50V2 Predictions:", predictions)
 
         return rgb_frame
 
@@ -74,6 +83,10 @@ class WebcamApp(QWidget):
         self.load_model_button = QPushButton("Load YOLO Model", self)
         self.layout.addWidget(self.load_model_button)
 
+        # Button to load a custom ResNet50V2 model
+        self.load_resnet_button = QPushButton("Load Custom ResNet Model", self)
+        self.layout.addWidget(self.load_resnet_button)
+
         # Video display label
         self.video_label = QLabel(self)
         self.layout.addWidget(self.video_label)
@@ -94,6 +107,7 @@ class WebcamApp(QWidget):
         self.start_button.clicked.connect(self.start_webcam)
         self.yolo_button.clicked.connect(self.toggle_yolo)
         self.load_model_button.clicked.connect(self.load_yolo_model)
+        self.load_resnet_button.clicked.connect(self.load_custom_resnet_model)
 
     def populate_webcams(self):
         """Search and list available webcams."""
@@ -115,9 +129,12 @@ class WebcamApp(QWidget):
             self.timer.start(30)  # Refresh rate in ms
 
     def toggle_yolo(self):
-        """Enable or disable YOLO inference."""
-        self.yolo_enabled = not self.yolo_enabled
-        self.yolo_button.setText("Disable YOLO Inference" if self.yolo_enabled else "Enable YOLO Inference")
+        """Enable or disable YOLO inference only if both models are loaded."""
+        if self.model and self.inference_processor and self.inference_processor.custom_resnet:
+            self.yolo_enabled = not self.yolo_enabled
+            self.yolo_button.setText("Disable YOLO Inference" if self.yolo_enabled else "Enable YOLO Inference")
+        else:
+            self.show_warning("Please load both YOLO and ResNet models before enabling inference.")
 
     def load_yolo_model(self):
         """Open a file dialog to load a YOLO model."""
@@ -126,6 +143,22 @@ class WebcamApp(QWidget):
             self.model = YOLO(model_path)
             self.inference_processor = InferenceProcessor(self.model)
             self.load_model_button.setText(f"Model Loaded: {model_path.split('/')[-1]}")
+
+    def load_custom_resnet_model(self):
+        """Open a file dialog to load a custom ResNet model."""
+        model_path, _ = QFileDialog.getOpenFileName(self, "Select ResNet Model", "", "Keras Model (*.h5)")
+        if model_path and self.inference_processor:
+            self.inference_processor.load_custom_resnet(model_path)
+            self.load_resnet_button.setText(f"ResNet Model Loaded: {model_path.split('/')[-1]}")
+
+    def show_warning(self, message):
+        """Show a warning message to the user."""
+        warning = QMessageBox(self)
+        warning.setIcon(QMessageBox.Warning)
+        warning.setWindowTitle("Warning")
+        warning.setText(message)
+        warning.setStandardButtons(QMessageBox.Ok)
+        warning.exec_()
 
     def update_frame(self):
         """Capture frame from webcam and display it."""
