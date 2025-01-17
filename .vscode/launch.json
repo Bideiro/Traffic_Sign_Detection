@@ -12,13 +12,6 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "Python Debugger: tensortest",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "tensortest.py",
-      "console": "integratedTerminal"
-    },
-    {
       "name": "Python Debugger: main",
       "type": "debugpy",
       "request": "launch",

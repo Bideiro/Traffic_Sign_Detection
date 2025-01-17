@@ -1,6 +1,6 @@
 import sys
 import cv2
-import time
+import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QFileDialog, QMessageBox
 from PyQt5.QtGui import QImage, QPixmap
@@ -31,29 +31,30 @@ class InferenceProcessor:
         
     # YOLO Detection Phase
     def process_frame(self, frame):
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        results = self.YOLO_model.predict(source=rgb_frame, save=False, conf=0.25, show=False)
+        results = self.YOLO_model.predict(source=frame, save=False, conf=0.25, show=False)
 
         # Cropping for ResNet Identification Phase
         for result in results:
             for box in result.boxes.xyxy:
                 x1, y1, x2, y2 = map(int, box[:4])
-                cv2.rectangle(rgb_frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
                 cropped = frame[y1:y2, x1:x2]
 
                 # Process the cropped ROI with ResNet50V2
                 if cropped.size > 0: 
-                    resized = cv2.resize(cropped, (224, 224))  # Resize to ResNet50V2 input size
-                    array = img_to_array(resized)  # Convert to array
-                    array = np.expand_dims(array, axis=0)  # Add batch dimension
-                    array = preprocess_input(array)  # Preprocess for ResNet50V2
+                    resized = cv2.resize(cropped, (224, 224))
+                    # array = img_to_array(resized)  # Convert to array
+                    # array = np.expand_dims(array, axis=0)  # Add batch dimension
+                    array = np.expand_dims(resized, axis=0)
+                    array = preprocess_input(array)  #a Preaaprocess for ResNet50V2
 
                     # ResNet50V2 Prediction
-                    predictions = self.resnet.predict(array)
+                    predictions = self.ResNet_model.predict(array)
                     print(predictions)  # Output predictions to the terminal
 
-        return rgb_frame
+        return frame
 
 class mainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -91,6 +92,7 @@ class mainWindow(QMainWindow, Ui_MainWindow):
         
     # Placing action buttons for each camera
     def Refresh_Cams(self):
+        self.CamSel = False
         self.menuCamera.clear()
         index = 0
         while True:
@@ -99,7 +101,7 @@ class mainWindow(QMainWindow, Ui_MainWindow):
                 break
             action = QAction(f"Camera {index}",self)
             
-            action.triggered.connect(lambda checked, no= index: self.Set_Cam(no))
+            action.triggered.connect(lambda checked, no= index : self.Set_Cam(no))
             
             self.menuCamera.addAction(action)
             
@@ -111,23 +113,26 @@ class mainWindow(QMainWindow, Ui_MainWindow):
 
     # Functions for camera action buttons / Sets camera
     def Set_Cam(self, no):
+        self.CamSel = True
+        print(f'cam set = {no}')
         self.Capture = cv2.VideoCapture(no)
         if self.Capture.isOpened():
             self.timer.start(60) # Refresh rate in ms
 
     def Camera_Output(self):
             ret, frame = self.Capture.read()
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             if ret:
-                if self.yolo_enabled and self.inference_processor:
-                    frame = self.inference_processor.process_frame(frame)
-            else:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
+                if self.IsInfeOn and self.Inference:
+                    frame = self.Inference.process_frame(frame)
+                    
                 image = QImage(
                     frame, frame.shape[1], frame.shape[0], QImage.Format_RGB888
                 )
                 pixmap = QPixmap.fromImage(image)
                 self.Vid_label.setPixmap(pixmap)
+            else:
+                print("Retrival of image problem with camera!")
 
     # Load YOLO Model
     # WIP setting inference back on and off when changing models
@@ -147,13 +152,13 @@ class mainWindow(QMainWindow, Ui_MainWindow):
     # WIP setting inference back on and off when changing models
     def load_ResNet_model(self):
         model_path, _ = QFileDialog.getOpenFileName(self, "Select a ResNet50V2 Model", "", "Keras Model (*.keras)")
-        if model_path and self.inference_processor:
+        if model_path and self.Inference:
             self.Inference.load_ResNet(model_path)
             self.Inference.ResNet_model_name = f"{model_path.split('/')[-1]}"
             self.ResNet_Label.setText("ResNet50V2 Model Used: " + self.Inference.ResNet_model_name)
             self.statusbar.showMessage("Successfully loaded " +  self.Inference.ResNet_model_name + " as the ResNet50V2 model. ", 7000)
             if self.IsInfeOn:
-                self.status_Label.setText('Inference Mode: Off (hi)')
+                self.status_Label.setText('Inference Mode: Off')
             else:
                 self.status_Label.setText('Inference Mode: On')
 
@@ -168,8 +173,14 @@ class mainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.show_warning("Please select a camera before enabling inference.")
     
+    def closeEvent(self, event):
+        print("Resources released.")
+        self.timer.stop()
+        if self.Capture:
+            self.Capture.release()
+        super().closeEvent(event)
+    
     def show_warning(self, message):
-        """Show a warning message to the user."""
         warning = QMessageBox(self)
         warning.setIcon(QMessageBox.Warning)
         warning.setWindowTitle("Warning")
