@@ -48,7 +48,7 @@ class InferenceProcessor:
                     # array = img_to_array(resized)  # Convert to array
                     # array = np.expand_dims(array, axis=0)  # Add batch dimension
                     array = np.expand_dims(resized, axis=0)
-                    array = preprocess_input(array)  #a Preaaprocess for ResNet50V2
+                    array = preprocess_input(array)  # Preprocess for ResNet50V2
 
                     # ResNet50V2 Prediction
                     predictions = self.ResNet_model.predict(array)
