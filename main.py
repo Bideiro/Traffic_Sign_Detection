@@ -4,7 +4,7 @@ import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QFileDialog, QMessageBox
 from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
@@ -14,13 +14,29 @@ from ultralytics import YOLO
 
 from main_ui import Ui_MainWindow
 
-class InferenceProcessor:
+# Problems when changing camera while the camera is on
+
+class InferenceProcessor(QThread):
+    
+    inference_done = pyqtSignal(np.ndarray)
+    
     def __init__(self):
+        super().__init__()
+        self.running = False
+        self.frame = None
+        
         self.YOLO_model = None
         self.ResNet_model = None
         
         self.YOLO_model_name = "None"
         self.ResNet_model_name = "None"
+        
+    def run(self):
+        while self.running:
+            if self.frame is not None:
+                processed_frame = self.process_frame(self.frame)
+                self.inference_done.emit(processed_frame)
+
         
     # Loading Models
     def load_ResNet(self, model_path):
@@ -62,6 +78,8 @@ class mainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         
         self.Inference = InferenceProcessor()
+        self.Inference.inference_done.connect(self.Display_output)
+        
         self.Capture = None
         self.IsInfeOn = False
         self.CamSel = False
@@ -119,21 +137,26 @@ class mainWindow(QMainWindow, Ui_MainWindow):
         if self.Capture.isOpened():
             self.timer.start(60) # Refresh rate in ms
 
+    # This always runs
     def Camera_Output(self):
             ret, frame = self.Capture.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             if ret:
                 if self.IsInfeOn and self.Inference:
-                    frame = self.Inference.process_frame(frame)
-                    
-                image = QImage(
-                    frame, frame.shape[1], frame.shape[0], QImage.Format_RGB888
-                )
-                pixmap = QPixmap.fromImage(image)
-                self.Vid_label.setPixmap(pixmap)
+                    # frame = self.Inference.process_frame(frame)
+                    self.Inference.frame = frame
+                else:
+                    self.Display_output(frame)
             else:
                 print("Retrival of image problem with camera!")
-
+                
+    def Display_output(self, frame):
+        image = QImage(
+            frame, frame.shape[1], frame.shape[0], QImage.Format_RGB888
+        )
+        pixmap = QPixmap.fromImage(image)
+        self.Vid_label.setPixmap(pixmap)
+        
     # Load YOLO Model
     # WIP setting inference back on and off when changing models
     def load_YOLO_model(self):
@@ -162,12 +185,33 @@ class mainWindow(QMainWindow, Ui_MainWindow):
             else:
                 self.status_Label.setText('Inference Mode: On')
 
+    def check_models(self):
+        if self.Inference.YOLO_model or self.Inference.ResNet_model:
+            if self.Inference.YOLO_model:
+                self.show_warning("Please load a YOLO Model before proceeding! (*.pt)")
+            else:
+                self.show_warning("Please load a ResNEt50v2 Model before proceeding! (*.keras)")
+            return 0
+        else:
+            return 1
+        
     def enable_Inference(self):
         if self.CamSel:
-            if self.Inference.YOLO_model and self.Inference.ResNet_model:
+            if self.check_models:
                 self.IsInfeOn = not self.IsInfeOn
                 self.Inference_Button.setText("Disable YOLO_ResNet50V2 Inference" if self.IsInfeOn else "Enable YOLO_ResNet50V2 Inference")
                 self.status_Label.setText("Inference Mode: On" if self.IsInfeOn else "Inference Mode: Off")
+                
+                # run the seperate thread
+                if self.IsInfeOn:
+                    # self.timer.stop()
+                    self.Inference.running = True
+                    self.Inference.start()
+                else:
+                    self.Inference.running = False
+                    self.Inference.quit()
+                    # self.timer.start(60)
+                
             else:
                 self.show_warning("Please load both YOLO and ResNet models before enabling inference.")
         else:
@@ -187,6 +231,7 @@ class mainWindow(QMainWindow, Ui_MainWindow):
         warning.setText(message)
         warning.setStandardButtons(QMessageBox.Ok)
         warning.exec_()
+    
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
 
