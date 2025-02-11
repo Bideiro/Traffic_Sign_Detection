@@ -20,7 +20,7 @@
       <item>
        <widget class="QLabel" name="Vid_label">
         <property name="text">
-         <string>TextLabel</string>
+         <string/>
         </property>
        </widget>
       </item>

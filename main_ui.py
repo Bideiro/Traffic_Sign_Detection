@@ -22,6 +22,7 @@ class Ui_MainWindow(object):
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.Vid_label = QtWidgets.QLabel(self.centralwidget)
+        self.Vid_label.setText("")
         self.Vid_label.setObjectName("Vid_label")
         self.verticalLayout.addWidget(self.Vid_label)
         self.horizontalLayout.addLayout(self.verticalLayout)
@@ -80,7 +81,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.Vid_label.setText(_translate("MainWindow", "TextLabel"))
         self.label.setText(_translate("MainWindow", "TextLabel"))
         self.Inference_Button.setText(_translate("MainWindow", "Enable YOLO_ResNet50V2 Inference"))
         self.menuCamera.setTitle(_translate("MainWindow", "Camera"))

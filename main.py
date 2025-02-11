@@ -17,7 +17,6 @@ from main_ui import Ui_MainWindow
 # Problems when changing camera while the camera is on
 
 class InferenceProcessor(QThread):
-    
     inference_done = pyqtSignal(np.ndarray)
     
     def __init__(self):
@@ -31,6 +30,10 @@ class InferenceProcessor(QThread):
         self.YOLO_model_name = "None"
         self.ResNet_model_name = "None"
         
+        self.class_Name = ['20','30','40','50','60','70','80','90','100','120',
+            'Crosswalk','No Overtakes','Stop','Traffic Light - Green'
+            ,'Traffic Light - Red','Yield']
+
     def run(self):
         while self.running:
             if self.frame is not None:
@@ -67,10 +70,14 @@ class InferenceProcessor(QThread):
                     array = preprocess_input(array)  # Preprocess for ResNet50V2
 
                     # ResNet50V2 Prediction
-                    predictions = self.ResNet_model.predict(array)
-                    print(predictions)  # Output predictions to the terminal
+                    # predictions = self.ResNet_model.predict(array)
+                    # print(f'Predicted: {self.class_Name[predictions.argmax()]} - {(predictions.max()*100):.3f}%')# Output predictions to the terminal
+                    predictions = self.ResNet_model(array, training = False).numpy()
+                    print(f'Predicted: {self.class_Name[predictions.argmax()]} - {(predictions.max()*100):.3f}%') # Output predictions to the terminal
 
+        
         return frame
+
 
 class mainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -186,18 +193,18 @@ class mainWindow(QMainWindow, Ui_MainWindow):
                 self.status_Label.setText('Inference Mode: On')
 
     def check_models(self):
-        if self.Inference.YOLO_model or self.Inference.ResNet_model:
+        if not self.Inference.YOLO_model or not self.Inference.ResNet_model:
             if self.Inference.YOLO_model:
                 self.show_warning("Please load a YOLO Model before proceeding! (*.pt)")
             else:
                 self.show_warning("Please load a ResNEt50v2 Model before proceeding! (*.keras)")
-            return 0
+            return False
         else:
-            return 1
+            return True
         
     def enable_Inference(self):
         if self.CamSel:
-            if self.check_models:
+            if self.check_models():
                 self.IsInfeOn = not self.IsInfeOn
                 self.Inference_Button.setText("Disable YOLO_ResNet50V2 Inference" if self.IsInfeOn else "Enable YOLO_ResNet50V2 Inference")
                 self.status_Label.setText("Inference Mode: On" if self.IsInfeOn else "Inference Mode: Off")
