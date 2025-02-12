@@ -3,6 +3,14 @@ import yaml
 import shutil
 from tqdm import tqdm
 
+def delete_empty_dirs(directory):
+    """Recursively delete empty directories."""
+    for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
+        for dirname in dirnames:
+            dir_to_check = os.path.join(dirpath, dirname)
+            if not os.listdir(dir_to_check):  # Check if directory is empty
+                os.rmdir(dir_to_check)
+
 def create_directories(yaml_file, dataset_dir, output_dir):
     # Load YAML file
     with open(yaml_file, 'r') as file:
@@ -59,10 +67,17 @@ def create_directories(yaml_file, dataset_dir, output_dir):
             shutil.copy(image_path, os.path.join(target_dir, 'images', image_file))
 
         shutil.copy(label_path, os.path.join(target_dir, 'texts', label_file))
+        # Delete empty directories after processing
+        delete_empty_dirs(output_dir)
 
 if __name__ == "__main__":
-    yaml_file = "Dataset Archive/TrafficSignDetection.v11-doarsemnelebune.yolov8/data.yaml"  # Path to the YOLO dataset YAML file
-    dataset_dir = "Dataset Archive/TrafficSignDetection.v11-doarsemnelebune.yolov8/valid"  # Path to the YOLO dataset directory
-    output_dir = "Transformed_Datasets/TrafficSignDetection.v11-doarsemnelebune.yolov8/valid"  # Path to the output directory
+    
+    Dataset_home_folder = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/Dissertation.v5-latest.yolov8"  # Path to the YOLO dataset directory
+    yaml_file = Dataset_home_folder + "/data.yaml"  # Path to the YOLO dataset YAML file
+    output_dir = "C:/Users/dei/Documents/Programming/Datasets/YOLO_Transformed_Datasets" + "/Dissertation.v5-latest.yolov8"  # Path to the output directory
 
-    create_directories(yaml_file, dataset_dir, output_dir)
+    create_directories(yaml_file, Dataset_home_folder + "/valid", output_dir + "/valid")
+    create_directories(yaml_file, Dataset_home_folder + "/train", output_dir + "/train")
+    create_directories(yaml_file, Dataset_home_folder + "/test", output_dir + "/test")
+    
+

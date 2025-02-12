@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QFileDialog, QMessageB
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 
+
+from PyQt5.QtWidgets import QMainWindow,QVBoxLayout,QHBoxLayout, QWidget
+
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
@@ -39,8 +42,6 @@ class InferenceProcessor(QThread):
             if self.frame is not None:
                 processed_frame = self.process_frame(self.frame)
                 self.inference_done.emit(processed_frame)
-
-        
     # Loading Models
     def load_ResNet(self, model_path):
         self.ResNet_model = load_model(model_path)
@@ -60,7 +61,7 @@ class InferenceProcessor(QThread):
                 x1, y1, x2, y2 = map(int, box[:4])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
                 cropped = frame[y1:y2, x1:x2]
-
+                
                 # Process the cropped ROI with ResNet50V2
                 if cropped.size > 0: 
                     resized = cv2.resize(cropped, (224, 224))
@@ -74,10 +75,8 @@ class InferenceProcessor(QThread):
                     # print(f'Predicted: {self.class_Name[predictions.argmax()]} - {(predictions.max()*100):.3f}%')# Output predictions to the terminal
                     predictions = self.ResNet_model(array, training = False).numpy()
                     print(f'Predicted: {self.class_Name[predictions.argmax()]} - {(predictions.max()*100):.3f}%') # Output predictions to the terminal
-
         
         return frame
-
 
 class mainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):

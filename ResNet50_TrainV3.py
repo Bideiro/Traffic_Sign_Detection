@@ -5,21 +5,14 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # Dataset paths
-train_dir = "ResNet_Dataset/train"  # Replace with your dataset path
-val_dir = "ResNet_Dataset/valid"      # Replace with your dataset path
-
-# train_datagen = ImageDataGenerator(dtype = 'float32', preprocessing_function=tf.keras.applications.resnet.preprocess_input)
-# val_datagen = ImageDataGenerator(dtype = 'float32', preprocessing_function=tf.keras.applications.resnet.preprocess_input)
+Dataset_home_dir = "C:/Users/dei/Documents/Programming/Datasets/Combined_Dataset_ResNet"
+train_dir =  Dataset_home_dir + "/train"  # Replace with your dataset path
+val_dir = Dataset_home_dir + "/test"      # Replace with your dataset path
 
 train_datagen = ImageDataGenerator(dtype = 'float32', preprocessing_function=tf.keras.applications.resnet_v2.preprocess_input)
 val_datagen = ImageDataGenerator(dtype = 'float32', preprocessing_function=tf.keras.applications.resnet_v2.preprocess_input)
 
 img_size = 224
-
-# train_datagen = ImageDataGenerator(dtype = 'float32', preprocessing_function=tf.keras.applications.inception_resnet_v2.preprocess_input)
-# val_datagen = ImageDataGenerator(dtype = 'float32', preprocessing_function=tf.keras.applications.inception_resnet_v2.preprocess_input)
-
-# img_size = 299
 
 # Load datasets
 train_dataset = train_datagen.flow_from_directory(
@@ -65,10 +58,10 @@ history = model.fit(
     validation_data=val_dataset,
     steps_per_epoch=steps_per_epoch,
     validation_steps=validation_steps,
-    epochs=10
+    epochs=50
 )
 
-model.save('Resnet50V2(TrafficSignNou)V2.h5')
+model.save('Resnet50V2(newgen - 2/12/25)V2.keras')
 
 # # Resnet 50 V2
 
