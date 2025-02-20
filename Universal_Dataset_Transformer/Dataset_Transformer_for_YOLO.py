@@ -64,17 +64,21 @@ def create_directories(yaml_file, dataset_dir, output_dir):
         image_path = os.path.join(images_dir, image_file)
 
         if os.path.exists(image_path):
+            os.makedirs(os.path.join(target_dir, 'images'), exist_ok=True)
             shutil.copy(image_path, os.path.join(target_dir, 'images', image_file))
 
+        # Ensure the texts directory exists before copying labels
+        os.makedirs(os.path.join(target_dir, 'texts'), exist_ok=True)
+        
         shutil.copy(label_path, os.path.join(target_dir, 'texts', label_file))
         # Delete empty directories after processing
         delete_empty_dirs(output_dir)
 
 if __name__ == "__main__":
     
-    Dataset_home_folder = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/Dissertation.v5-latest.yolov8"  # Path to the YOLO dataset directory
+    Dataset_home_folder = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/Lightweight_ObjDetect.v7-object_detection9900.yolov8"  # Path to the YOLO dataset directory
     yaml_file = Dataset_home_folder + "/data.yaml"  # Path to the YOLO dataset YAML file
-    output_dir = "C:/Users/dei/Documents/Programming/Datasets/YOLO_Transformed_Datasets" + "/Dissertation.v5-latest.yolov8"  # Path to the output directory
+    output_dir = "C:/Users/dei/Documents/Programming/Datasets/Combined_Dataset_YOLO" + "/Lightweight_ObjDetect.v7-object_detection9900.yolov8"  # Path to the output directory
 
     create_directories(yaml_file, Dataset_home_folder + "/valid", output_dir + "/valid")
     create_directories(yaml_file, Dataset_home_folder + "/train", output_dir + "/train")

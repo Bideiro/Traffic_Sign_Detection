@@ -10,7 +10,7 @@ class YOLOApp(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.model = YOLO("Completed Models/YOLOv8s(lightweight)_e10_detect_11-25-24/weights/best.pt")  # Load YOLO model
+        self.model = YOLO("C:/Users/dei/Documents/Programming/YOLOv8s(TrafficSignNou)_e10_detect_11-30-24.pt")  # Load YOLO model
         self.capture = cv2.VideoCapture(0)  # Initialize webcam capture
         self.timer = QTimer(self)  # Timer for updating frames
         self.timer.timeout.connect(self.update_frame)  # Call update_frame on timeout

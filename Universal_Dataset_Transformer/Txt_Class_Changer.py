@@ -15,12 +15,19 @@ def update_all_classes_in_yolo_labels(labels_dir, new_class, output_dir):
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
-    # Collect all .txt files
+    # Find all subdirectories named 'texts'
+    text_dirs = []
+    for root, dirs, _ in os.walk(labels_dir):
+        if 'texts' in dirs:
+            text_dirs.append(os.path.join(root, 'texts'))
+
+    # Collect all .txt files in 'texts' directories
     all_files = []
-    for root, _, files in os.walk(labels_dir):
-        for file in files:
-            if file.endswith(".txt"):
-                all_files.append(os.path.join(root, file))
+    for text_dir in text_dirs:
+        for root, _, files in os.walk(text_dir):
+            for file in files:
+                if file.endswith(".txt"):
+                    all_files.append(os.path.join(root, file))
 
     # Process files with a progress bar
     for file_path in tqdm(all_files, desc="Updating labels"):
@@ -56,9 +63,9 @@ def update_all_classes_in_yolo_labels(labels_dir, new_class, output_dir):
             print(file)
 
 if __name__ == "__main__":
-    labels_dir = input("Enter the path to the labels directory: ").strip()
+    dataset_home_dir = "C:\Users\dei\Documents\Programming\Datasets\Combined_Dataset_YOLO\Dissertation.v5-latest.yolov8"
     new_class = int(input("Enter the new class number: ").strip())
-    output_dir = "Combined_Dataset/train/Crosswalk/labels"
+    output_dir = + "Combined/labels"
 
-    update_all_classes_in_yolo_labels(labels_dir, new_class, output_dir)
+    update_all_classes_in_yolo_labels(dataset_home_dir, new_class, output_dir)
     print(f"Class numbers updated successfully! Updated files are saved in '{output_dir}'.")

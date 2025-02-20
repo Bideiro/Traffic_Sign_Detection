@@ -4,38 +4,20 @@ from ultralytics import YOLO
 
 if __name__ == '__main__':
     # Create a new YOLO model from scratch
-    # model = YOLO("yolov5s.yaml")
-    # model = YOLO("yolov6s.yaml")
-    # model = YOLO("yolov6s.yaml")
-    # model = YOLO("yolov8s.yaml")
-    # model = YOLO("yolov9s.yaml")
-    # model = YOLO("yolov10s.yaml")
-
-
+    model = YOLO("yolov8s.yaml")
     # # Load a pretrained YOLO model (recommended for training)
-    # model = YOLO("yolov3n.pt")
-    # model = YOLO("YOLOV6s.pt")
-    # model = YOLO("yolov8s.pt")
-    # model = YOLO("yolov9s.pt")
-    # model = YOLO("yolov10s.pt")
-    # model = YOLO("yolo11s.pt")
-    # model = YOLO("runs/detect/YOLOv8s(TrafficSignNou)_e10_detect_11-30-24/weights/best.pt")
-    
-    # model = YOLO("yolov5s.yaml").load("Completed Models/YOLOv5s(TrafficSignNou)_e10_detect_12-2-24/weights/best.pt")
     # model = YOLO("Completed Models/YOLOv5s(TrafficSignNou)_e10_detect_12-2-24/weights/best.pt")
-    # model = YOLO("yolov8s.yaml").load("Completed Models/YOLOv8s(TrafficSignNou)_e10_detect_11-30-24/weights/best.pt")
-    model = YOLO("Completed Models/YOLOv8s(TrafficSignNou)_e10_detect_11-30-24/weights/best.pt")
-    
+
     # Display model information (optional)
     model.info()
 
     # # Train the model
-    # results = model.train(data="data.yaml", epochs=10, device='0', save_period= 1, name='YOLOv5s(TrafficSignNou)_e10_detect_11-30-24')
+    results = model.train(data="data.yaml", epochs=10, device='0', save_period= 1, name='YOLOv5s(NewGen - 2-13-25)_e10_detect_11-30-24')
 
     # Evaluate the model's performance on the validation set
     results = model.val(data = "data.yaml", device = "0")
     # Export the model to ONNX format
-    # success = model.export(format="onnx")
+    success = model.export(format="onnx")
 
 
 #  training yolov7

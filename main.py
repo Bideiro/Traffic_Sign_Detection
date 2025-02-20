@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import QMainWindow,QVBoxLayout,QHBoxLayout, QWidget
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
-
 from ultralytics import YOLO
 
 from main_ui import Ui_MainWindow
@@ -33,9 +32,7 @@ class InferenceProcessor(QThread):
         self.YOLO_model_name = "None"
         self.ResNet_model_name = "None"
         
-        self.class_Name = ['20','30','40','50','60','70','80','90','100','120',
-            'Crosswalk','No Overtakes','Stop','Traffic Light - Green'
-            ,'Traffic Light - Red','Yield']
+        self.class_Name = ['Crosswalk','End of Speed Limit','No Entry','No Overtaking','20','30','40','50','60','70','80','80 - End','90','100','120','Stop Sign','Yield']
 
     def run(self):
         while self.running:
@@ -53,7 +50,7 @@ class InferenceProcessor(QThread):
     def process_frame(self, frame):
         # rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        results = self.YOLO_model.predict(source=frame, save=False, conf=0.25, show=False)
+        results = self.YOLO_model.predict(source=frame, save=False, conf=0.25, show=False, stream=True)
 
         # Cropping for ResNet Identification Phase
         for result in results:
