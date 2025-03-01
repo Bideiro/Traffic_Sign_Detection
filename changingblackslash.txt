@@ -1,0 +1,11 @@
+/mnt/f/AAA Thesis Dataset Archive/AAA Dataset Archive/Dissertation.v5-latest.yolov8
+
+F:AAA Thesis Dataset ArchiveCombined_Dataset_ResNet
+
+RESNET DATASET:
+
+/mnt/f/AAA Thesis Dataset Archive/Combined_Dataset_ResNet
+
+OUTPUT:
+
+/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO

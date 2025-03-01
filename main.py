@@ -18,6 +18,10 @@ from main_ui import Ui_MainWindow
 
 # Problems when changing camera while the camera is on
 
+# proposed idea 
+# change pipeline so that YOLO model scans again after giving results
+# 
+
 class InferenceProcessor(QThread):
     inference_done = pyqtSignal(np.ndarray)
     
@@ -32,7 +36,8 @@ class InferenceProcessor(QThread):
         self.YOLO_model_name = "None"
         self.ResNet_model_name = "None"
         
-        self.class_Name = ['Crosswalk','End of Speed Limit','No Entry','No Overtaking','20','30','40','50','60','70','80','80 - End','90','100','120','Stop Sign','Yield']
+        self.class_Name = ['All traffic must turn left','All traffic must turn right','Keep Left','Keep Right','No Entry','No Overtaking','No Right - Left Turn','No Right Turn','No U-Turn',
+                        '20','30','40','50','60','70','80','90','100','120','Stop Sign','Yield']
 
     def run(self):
         while self.running:

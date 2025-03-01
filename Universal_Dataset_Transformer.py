@@ -85,10 +85,11 @@ import yaml
 import cv2
 import shutil
 from tqdm import tqdm
+from pathlib import Path
 
 """ Convert a YOLO dataset to a dataset format suitable for ResNet-50. """
 
-def Yolo_to_ResNetV2_hierarchy(yaml_path, yolo_annotations_dir, images_dir, output_dir):
+def Yolo_to_ResNetV2(yaml_path, yolo_annotations_dir, images_dir, output_dir):
     
     with open(yaml_path, "r") as f:
         yolo_config = yaml.safe_load(f)
@@ -166,72 +167,61 @@ def Yolo_to_ResNetV2_hierarchy(yaml_path, yolo_annotations_dir, images_dir, outp
         class_output_dir = os.path.join(output_dir, class_name)
         if not os.listdir(class_output_dir):
             os.rmdir(class_output_dir)
-    
-def Yolo_to_ResNetV2_hierachy_YOLO(dataset_dir, output_dir):
-    
-    yaml_file = dataset_dir + '/data.yaml'
-    
-    # Load YAML file
-    with open(yaml_file, 'r') as file:
-        data = yaml.safe_load(file)
 
-    # Extract class names
-    classes = data.get('names', [])
+# From Orig YOLO to YOLO Main
 
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
+def list_subdirectories(folder_path):
+    try:
+        subdirs = [d for d in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, d))]
+        print(f"Subdirectories in {folder_path}: {subdirs}")  # Debugging line
+        return subdirs
+    except FileNotFoundError:
+        print("Error: Folder not found.")
+        return []
 
-    # Create directories for each class
-    class_dirs = {}
-    for class_name in classes:
-        class_path = os.path.join(output_dir, class_name)
-        os.makedirs(os.path.join(class_path, 'images'), exist_ok=True)
-        os.makedirs(os.path.join(class_path, 'texts'), exist_ok=True)
-        class_dirs[class_name] = class_path
 
-    # Create directory for multiple detections
-    multi_detection_dir = os.path.join(output_dir, 'multiple_detections')
-    os.makedirs(multi_detection_dir, exist_ok=True)
+def copy_matching_files(dir1, dir2, output_dir):
+    # Ensure the output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    # Process images and labels
-    images_dir = os.path.join(dataset_dir, 'images')
-    labels_dir = os.path.join(dataset_dir, 'labels')
+    # Traverse both directories and get filenames
+    dir1_files = {os.path.basename(f) for f in get_all_files(dir1)}
+    dir2_files = {os.path.basename(f) for f in get_all_files(dir2)}
 
-    label_files = [f for f in os.listdir(labels_dir) if f.endswith('.txt')]
+    print(f"Files in dir1: {dir1_files}")  # Debugging line
+    print(f"Files in dir2: {dir2_files}")  # Debugging line
 
-    for label_file in tqdm(label_files, desc="Processing files"):
-        label_path = os.path.join(labels_dir, label_file)
+    # Compare and copy matching files
+    for dirpath, _, filenames in os.walk(dir2):
+        for filename in filenames:
+            if filename in dir1_files:
+                # Get relative path of the file in dir2
+                rel_path = os.path.relpath(dirpath, dir2)
+                output_path = os.path.join(output_dir, rel_path)
 
-        # Read label file to determine classes present
-        with open(label_path, 'r') as lf:
-            class_ids = {line.split()[0] for line in lf}
+                print(f"Copying {filename} from {dirpath} to {output_path}")  # Debugging line
 
-        class_names = [classes[int(class_id)] for class_id in class_ids]
+                # Ensure the parent folder exists in the output directory
+                if not os.path.exists(output_path):
+                    os.makedirs(output_path)
 
-        # Determine the output folder
-        if len(class_names) == 1:
-            target_class = class_names[0]
-            target_dir = class_dirs[target_class]
-        else:
-            folder_name = "_and_".join(sorted(class_names))
-            target_dir = os.path.join(multi_detection_dir, folder_name)
-            os.makedirs(os.path.join(target_dir, 'images'), exist_ok=True)
-            os.makedirs(os.path.join(target_dir, 'texts'), exist_ok=True)
+                # Copy the file from dir2 to output_dir
+                file_in_dir2 = os.path.join(dirpath, filename)
+                shutil.copy(file_in_dir2, output_path)
+                print(f"Copied {filename} to {output_path}")
 
-        # Copy image and label file to the target directory
-        image_file = label_file.replace('.txt', '.jpg')  # Assuming image format is .jpg
-        image_path = os.path.join(images_dir, image_file)
 
-        if os.path.exists(image_path):
-            os.makedirs(os.path.join(target_dir, 'images'), exist_ok=True)
-            shutil.copy(image_path, os.path.join(target_dir, 'images', image_file))
+def get_all_files(dir_path):
+    """Helper function to retrieve all files in a directory and its subdirectories."""
+    file_paths = []
+    for dirpath, _, filenames in os.walk(dir_path):
+        for filename in filenames:
+            full_path = os.path.join(dirpath, filename)
+            file_paths.append(full_path)
+    print(f"Files in {dir_path}: {file_paths}")  # Debugging line
+    return file_paths
 
-        # Ensure the texts directory exists before copying labels
-        os.makedirs(os.path.join(target_dir, 'texts'), exist_ok=True)
-        
-        shutil.copy(label_path, os.path.join(target_dir, 'texts', label_file))
-        # Delete empty directories after processing
-        delete_empty_dirs(output_dir)
 
 def delete_empty_dirs(directory):
     """Recursively delete empty directories."""
@@ -290,7 +280,7 @@ def update_Classes(labels_dir, new_class, output_dir):
 
         # Write updated content to the new file
         with open(output_file_path, "w") as f:
-            f.write("\n".join(updated_lines))
+            f.write("/n".join(updated_lines))
 
         # Track files with multiple unique classes
         if len(class_set) > 1:
@@ -303,62 +293,169 @@ def update_Classes(labels_dir, new_class, output_dir):
             print(file)
 
 
+# Used in the if else
 def YOLO_to_Resnet(dataset_dir, output_dir):
     
     yaml_path = dataset_dir + "/data.yaml"
     
     try:
-        Yolo_to_ResNetV2_hierarchy(yaml_path, dataset_dir + "/test/labels", dataset_dir + "/test/images", output_dir + "/test")
+        Yolo_to_ResNetV2(yaml_path, dataset_dir + "/test/labels", dataset_dir + "/test/images", output_dir + "/test")
         
-        Yolo_to_ResNetV2_hierarchy(yaml_path, dataset_dir + "/train/labels", dataset_dir + "/train/images", output_dir + "/train")
+        Yolo_to_ResNetV2(yaml_path, dataset_dir + "/train/labels", dataset_dir + "/train/images", output_dir + "/train")
         
-        Yolo_to_ResNetV2_hierarchy(yaml_path, dataset_dir + "/valid/labels", dataset_dir + "/valid/images", output_dir+ "/valid")
+        Yolo_to_ResNetV2(yaml_path, dataset_dir + "/valid/labels", dataset_dir + "/valid/images", output_dir+ "/valid")
         
     except Exception as e:
         print(e)
         
-def YOLO_to_Transformed_YOLO(dataset_dir, output_dir):
+def YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, verbose):
+    for i in ["/test", "/train", "/valid"]:
+        resnet_class_folders = list_subdirectories(resnet_dir + i)
+        print(f"ResNet class folders: {resnet_class_folders}")  # Debugging line
+        
+        for x in resnet_class_folders:
+            x = '/' + x
+            print(f"Processing class: {x}")  # Debugging line
+
+            # YOLO orig then resnet
+            copy_matching_files(dataset_dir + i + '/images', resnet_dir + i + x, output_dir + i + x + '/images')
+            copy_matching_files(dataset_dir + i + '/labels', resnet_dir + i + x, output_dir + i + x + '/labels')
+
+
+# Bulk actions
+def bulk_action():
     
-    Yolo_to_ResNetV2_hierachy_YOLO(dataset_dir + "/test/images", output_dir + "/test")
+    dataset_dir = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/Road Sign Detection.v1i.yolov8"
     
-    Yolo_to_ResNetV2_hierachy_YOLO(dataset_dir + "/train/images", output_dir + "/train")
+    output_dir = "C:/Users/dei/Documents/Programming/Datasets/Transformed_Datasets_YOLO/Road Sign Detection.v1i.yolov8"
     
-    Yolo_to_ResNetV2_hierachy_YOLO(dataset_dir + "/valid/images",  output_dir+ "/valid")
+    YOLO_to_Transformed_YOLO(dataset_dir, output_dir)
     
+    dataset_dir = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/traffic signs.v2i.yolov8"
+    
+    output_dir = "C:/Users/dei/Documents/Programming/Datasets/Transformed_Datasets_YOLO/traffic signs.v2i.yolov8"
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, output_dir)
+    
+    dataset_dir = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/TrafficSignDetection.v11-doarsemnelebune.yolov8"
+    
+    output_dir = "C:/Users/dei/Documents/Programming/Datasets/Transformed_Datasets_YOLO/TrafficSignDetection.v11-doarsemnelebune.yolov8"
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, output_dir)
+    
+    dataset_dir = "C:/Users/dei/Documents/Programming/Datasets/Dataset Archive/TrafficSignNou.v2i.yolov8"
+    
+    output_dir = "C:/Users/dei/Documents/Programming/Datasets/Transformed_Datasets_YOLO/TrafficSignNou.v2i.yolov8"
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, output_dir)
+    
+def bulk_action_YOLO():
+    
+    resnet_dir = '/mnt/f/AAA Thesis Dataset Archive/Combined_Dataset_ResNet'
+    
+    output_dir = '/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO/Dissertation.v5-latest.yolov8'
+    dataset_dir = '/mnt/f/AAA Thesis Dataset Archive/Dataset Archive/Dissertation.v5-latest.yolov8'
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+    
+    output_dir = '/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO/Lightweight_ObjDetect.v7-object_detection9900.yolov8'
+    dataset_dir = '/mnt/f/AAA Thesis Dataset Archive/Dataset Archive/Lightweight_ObjDetect.v7-object_detection9900.yolov8'
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+    
+    output_dir = '/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO/Road Sign Detection.v1i.yolov8'
+    dataset_dir = '/mnt/f/AAA Thesis Dataset Archive/Dataset Archive/Road Sign Detection.v1i.yolov8'
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+    
+    output_dir = '/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO/traffic signs.v2i.yolov8'
+    dataset_dir = '/mnt/f/AAA Thesis Dataset Archive/Dataset Archive/traffic signs.v2i.yolov8'
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+    
+    output_dir = '/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO/TrafficSignDetection.v11-doarsemnelebune.yolov8'
+    dataset_dir = '/mnt/f/AAA Thesis Dataset Archive/Dataset Archive/TrafficSignDetection.v11-doarsemnelebune.yolov8'
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+    
+    output_dir = '/mnt/f/AAA Thesis Dataset Archive/Transformed_Datasets_YOLO/TrafficSignNou.v2i.yolov8'
+    dataset_dir = '/mnt/f/AAA Thesis Dataset Archive/Dataset Archive/TrafficSignNou.v2i.yolov8'
+    
+    YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+    
+    
+def list_subdirectories(folder_path):
+    try:
+        folder = Path(folder_path)
+        subdirectories = [d.name for d in folder.iterdir() if d.is_dir()]
+        return subdirectories
+    except FileNotFoundError:
+        return "Folder not found. Please check the path."
     
 if __name__ == "__main__":
     
-    dataset_dir = input("Set dataset location: ")
-    output_dir = input("Set Ouput location: ")
-    
-    print("""
-        Pick an action:
-        [1] Convert a YOLO Dataset into a ResNetV2 Dataset.
-        [2] Convert a YOLO Dataset into a similar Hierachy to ResNetV2.
-        [3] Rename YOLO Categories.
-        [4] Delete empty directories.
-        """)
-    
-    x = input("Choice? :")
-    
-    """for a predefined choice change this if else and just press enter"""
-    
-    if x == '\n':
-        x = ''
+    while(True):
         
-    if x == '1':
-        YOLO_to_Resnet(dataset_dir,output_dir)
-    elif x == '2':
-        YOLO_to_Transformed_YOLO(dataset_dir, output_dir)
-    elif x == '3':
+        print("""
+            Pick an action:
+            [1] Convert a YOLO Dataset into a ResNetV2 Dataset.
+            [2] Create a Main YOLO Dataset using the ResNetV2 Dataset and Original YOLO Dataset.
+            [3] Rename YOLO Categories.
+            [4] Delete empty directories.
+            [5] Bulk Action
+            [6] Bulk YOLO -> ResNetV2 Dataset [WIP]
+            [7] Bulk YOLO -> similar Hierachy to ResNetV2
+            [8] Class list Generator
+            [9] Exit
+            """)
         
-        labels_dir =input("Enter labels directory:")
+        x = input("Choice? :")
         
-        new_class = input("Input new class number:")
+        """for a predefined choice change this if else and just press enter"""
         
-        output_dir = input("Enter output directory:")
-        
-        update_Classes(labels_dir, new_class, output_dir)
-    elif x == '4':
-        dir = input("Input directory:")
-        delete_empty_dirs(dir)
+        if x == '\n':
+            x = ''
+        elif x not in [ "5", "7", "8", "9" ]:
+            dataset_dir = input("Set dataset location: ")
+            output_dir = input("Set Output location: ")
+            
+        if x == '1':
+            YOLO_to_Resnet(dataset_dir,output_dir)
+        elif x == '2':
+            resnet_dir = input("Set ResNet directory: ")
+            YOLO_to_Transformed_YOLO(dataset_dir, resnet_dir, output_dir, 0)
+        elif x == '3':
+            
+            labels_dir =input("Enter labels directory:")
+            
+            new_class = input("Input new class number:")
+            
+            output_dir = input("Enter output directory:")
+            
+            update_Classes(labels_dir, new_class, output_dir)
+        elif x == '4':
+            dir = input("Input directory:")
+            delete_empty_dirs(dir)
+        elif x == '5':
+            
+            c = '1'
+            if c != 1:
+                c = input('Do you know what you are doing? [1 - YES, 0 - NO]')
+                if c == '1':
+                    print('\n Initiating bulk action \n  ')
+                    bulk_action()
+        elif x == '7':
+            
+            c = '1'
+            if c != 1:
+                c = input('Do you know what you are doing? [1 - YES, 0 - NO]')
+                if c == '1':
+                    print('\n Initiating bulk action \n  ')
+                    bulk_action_YOLO()
+            
+        elif x =='8':
+            
+            folder_path = input("Enter ResNetV2 folder: ")
+            print(list_subdirectories(folder_path))
+        elif x =='9':
+            exit()

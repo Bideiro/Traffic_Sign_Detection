@@ -17,7 +17,7 @@ Direction Signs
 	All traffic must turn left
 	Merging traffic
 	Two-way traffic
-	Ssalubong na trapiko
+	Salubong na trapiko
 	Right lane must turn right 
 	Left lane must turn left
 

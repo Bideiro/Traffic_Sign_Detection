@@ -1,19 +1,25 @@
 import tensorflow as tf
 from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras.applications import ResNet50V2, ResNet50, InceptionResNetV2
+from tensorflow.keras.applications import ResNet50V2
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Flatten
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # Dataset paths
-Dataset_home_dir = "C:/Users/dei/Documents/Programming/Datasets/Combined_Dataset_ResNet"
+# Dataset_home_dir = "C:/Users/dei/Documents/Programming/Datasets/Combined_Dataset_ResNet"
+
+
+# FOR UBUNTU IN DEI COMP 
+Dataset_home_dir = "/mnt/c/Users/dei/Documents/Programming/Datasets/Combined_Dataset_ResNet" 
+
+
 train_dir =  Dataset_home_dir + "/train"  # Replace with your dataset path
 val_dir = Dataset_home_dir + "/test"      # Replace with your dataset path
 
 train_datagen = ImageDataGenerator(
     dtype = 'float32',
     preprocessing_function=tf.keras.applications.resnet_v2.preprocess_input,
-    rotation_range=30,       # Randomly rotate images by up to 30 degrees
+    rotation_range=15,       # Randomly rotate images by up to 30 degrees
     width_shift_range=0.2,   # Randomly shift width by 20%
     height_shift_range=0.2,  # Randomly shift height by 20%
     shear_range=0.2,         # Shearing transformations
@@ -73,14 +79,28 @@ lr_scheduler = ReduceLROnPlateau(
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy','recall','precision'])
 
 # Calculate steps per epoch
-steps_per_epoch = train_dataset.samples // train_dataset.batch_size
-validation_steps = val_dataset.samples // val_dataset.batch_size
+# steps_per_epoch = train_dataset.samples // train_dataset.batch_size
+# validation_steps = val_dataset.samples // val_dataset.batch_size
 
+# Enabling memory growth
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
+    
+    
 # Train the model
 history = model.fit(
     train_dataset,
     validation_data=val_dataset,
-    epochs=100
+    epochs=50
 )
 
-model.save('Resnet50V2(newgen_2_12_25)100e_uf20V2.keras')
+model.save('Resnet50V2(newgen_2_22_25)100e_uf20_adam.keras')
