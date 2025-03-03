@@ -292,7 +292,6 @@ def update_Classes(labels_dir, new_class, output_dir):
         for file in multi_class_files:
             print(file)
 
-
 # Used in the if else
 def YOLO_to_Resnet(dataset_dir, output_dir):
     
